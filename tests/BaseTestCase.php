@@ -12,12 +12,16 @@ abstract class BaseTestCase extends TestCase
     {
         parent::setUp();
         $this->db = Database::connect();
-        $this->db->beginTransaction();   // isolasi data antar test
+        $this->db->exec('SET FOREIGN_KEY_CHECKS = 0');
+        $this->db->beginTransaction();
     }
 
     protected function tearDown(): void
     {
-        $this->db->rollBack();           // kembalikan DB seperti semula
+        if ($this->db->inTransaction()) {
+            $this->db->rollBack();
+        }
+        $this->db->exec('SET FOREIGN_KEY_CHECKS = 1');
         parent::tearDown();
     }
 }

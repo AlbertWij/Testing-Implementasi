@@ -3,21 +3,32 @@ namespace App;
 
 class AppointmentRepository
 {
-    public function __construct(private \PDO $db) {}
+    public function __construct(private \PDO $db) {}  // ← ini yang hilang
 
     public function create(array $data): int
     {
+        // Validasi doctor_id dari tabel users
+        $check = $this->db->prepare(
+            "SELECT id FROM users WHERE id = :id AND role = 'doctor'"
+        );
+        $check->execute([':id' => $data['doctor_id']]);
+        if (!$check->fetch()) {
+            throw new \PDOException(
+                "SQLSTATE[23000]: Integrity constraint violation: doctor_id tidak valid"
+            );
+        }
+
         $stmt = $this->db->prepare(
             'INSERT INTO appointments (patient_id, doctor_id, doctor_name, doctor_specialty, appointment_date, reason, status, created_at)
              VALUES (:patient_id, :doctor_id, :doctor_name, :doctor_specialty, :date, :reason, "scheduled", NOW())'
         );
         $stmt->execute([
-            ':patient_id' => $data['patient_id'],
-            ':doctor_id'  => $data['doctor_id'],
-            ':doctor_name' => $data['doctor_name'] ?? null,
+            ':patient_id'       => $data['patient_id'],
+            ':doctor_id'        => $data['doctor_id'],
+            ':doctor_name'      => $data['doctor_name'] ?? null,
             ':doctor_specialty' => $data['doctor_specialty'] ?? null,
-            ':date'       => $data['appointment_date'],
-            ':reason'     => $data['reason'] ?? null,
+            ':date'             => $data['appointment_date'],
+            ':reason'           => $data['reason'] ?? null,
         ]);
         return (int) $this->db->lastInsertId();
     }
