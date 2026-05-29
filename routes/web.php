@@ -31,7 +31,15 @@ require __DIR__.'/auth.php';
 
 // Minimal dashboard route used by authentication tests
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    if (auth()->check()) {
+        $role = auth()->user()->role; // sesuaikan dengan nama kolom role di DB kamu
+        return match($role) {
+            'doctor' => redirect('/doctor/dashboard'),
+            'admin'  => redirect('/admin/dashboard'),
+            default  => redirect('/patient/dashboard'),
+        };
+    }
+    return redirect('/login');
 })->name('dashboard');
 
 // Generic profile routes used by tests (also patient has prefixed profile routes)
